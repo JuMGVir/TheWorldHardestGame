@@ -1,0 +1,505 @@
+MANUAL PARA CREAR UN NIVEL — The DOPO Hardest Game (V7)
+------------------------------------------------------------
+Este documento explica el formato TXT que el motor del
+juego (MementoDAO) parsea para importar niveles y partidas.
+
+Puedes crear tu propio nivel con cualquier editor de texto
+y guardarlo en la carpeta "saves/" del proyecto.
+Luego, en el juego, usa la opcion "Import" para cargarlo.
+
+ESTRUCTURA GENERAL:
+  === NIVL:<id> ===
+  ... definiciones de objetos ...
+  === FIN NIVL:<id> ===
+
+<id> es un numero entero cualquiera (1, 2, 99, 80...).
+Las lineas que empiezan con "//" son comentarios.
+Las lineas vacias se ignoran.
+
+El orden de las lineas dentro del bloque no importa,
+salvo que las lineas "Player" y "Deaths"/"Score" se
+asignan en orden de aparicion (1ra = P1, 2da = P2).
+
+INDICE DE OBJETOS
+------------------------------------------------------------
+SafeZone   -> Zonas seguras (START, INTERMEDIATE, FINAL)
+Wall       -> Paredes solidas
+Coin       -> Moneda amarilla normal
+SkinCoin   -> Moneda que cambia el tipo del jugador
+Life       -> Fuente de vida (escudo)
+Enemy      -> Enemigo con estrategia de movimiento
+Bomb       -> Bomba estatica
+Player     -> Jugador (datos de partida)
+Deaths     -> Contador de muertes
+Score      -> Puntuacion (monedas recolectadas)
+Winner     -> Ganador en modo PvP
+GameOver   -> Indica si el tiempo se acabo
+Time       -> Tiempo restante en frames
+Checkpoint -> Punto de reaparicion intermedio
+
+OBJETO: Player (Jugador)
+------------------------------------------------------------
+Se usa en partidas guardadas, NO es obligatorio para
+definir un nivel puro. Si no se incluye, el juego crea
+un jugador BLINKY por defecto en la zona START.
+
+Formato:
+  Player:x, y, TIPO, respawnX, respawnY, escudos
+
+PARAMETROS:
+  x,y        = posicion actual del jugador
+  TIPO       = tipo de personaje (ver tabla abajo)
+  respawnX,Y = punto de reaparicion al morir
+  escudos    = cantidad de escudos acumulados (0 = ninguno)
+
+TIPOS DE PERSONAJE (PlayerType):
+  BLINKY         - Rojo. Velocidad 1.0x, tamano 10x10,
+                   sin escudo innato. Estandar.
+  INKY           - Azul. Velocidad 1.5x, tamano 15x15,
+                   sin escudo innato. Rapido pero grande.
+  CLYDE          - Verde. Velocidad 1.0x, tamano 10x10,
+                   con escudo innato (al recibir dano se
+                   vuelve PENALIZED_CLYDE: vel 0.7x).
+  PENALIZED_CLYDE- CLYDE tras recibir golpe. Vel 0.7x.
+
+COLORES DE DISPLAY:
+  BLINKY -> "180,24,27"  (rojo)
+  INKY   -> "25,41,149"  (azul)
+  CLYDE  -> "40,127,47"  (verde)
+
+Border color (opcional, para distinguir jugadores en PvP):
+  Se asigna via codigo con player.setBorderColor("R,G,B").
+  No se persiste actualmente en el TXT.
+
+EJEMPLOS:
+  Player:20,70,BLINKY,20,70,0
+  Player:107,82,CLYDE,107,82,2   // con 2 escudos
+  Player:200,70,INKY,200,70,0
+
+Para 2 jugadores (PvP/PvM): incluir DOS lineas Player.
+La 1ra linea = Player 1, la 2da = Player 2.
+
+OBJETO: Deaths (Muertes)
+------------------------------------------------------------
+Contador de muertes del jugador.
+Formato: Deaths:<numero>
+Para 2 jugadores: dos lineas Deaths (1ra = P1, 2da = P2).
+
+EJEMPLO:
+  Deaths:5
+  Deaths:12    (segundo jugador, solo PvP)
+
+OBJETO: Score (Puntuacion)
+------------------------------------------------------------
+Cantidad de monedas requeridas recolectadas.
+Formato: Score:<numero>
+Para 2 jugadores: dos lineas Score (1ra = P1, 2da = P2).
+
+EJEMPLO:
+  Score:3
+
+OBJETO: Winner (Ganador - solo PvP)
+------------------------------------------------------------
+Indica quien gano la partida en modo 2 jugadores.
+Formato: Winner:<valor>
+VALORES: 0 = nadie, 1 = Player 1, 2 = Player 2
+
+EJEMPLO:
+  Winner:1
+
+OBJETO: GameOver (Estado de tiempo)
+------------------------------------------------------------
+Indica si el tiempo del nivel se agoto.
+Formato: GameOver:<valor>
+VALORES: 0 = tiempo OK, 1 = tiempo agotado
+
+EJEMPLO:
+  GameOver:0
+
+OBJETO: Time (Tiempo restante)
+------------------------------------------------------------
+Tiempo restante del nivel expresado en FRAMES.
+El juego corre a 60 fps, por lo que 60 frames = 1 segundo.
+Si no se incluye, el juego usa el tiempo limite del nivel
+(definido en LevelFactory) multiplicado por 60.
+
+Formato: Time:<frames>
+
+EJEMPLO:
+  Time:3600   -> 60 segundos restantes
+  Time:1800   -> 30 segundos restantes
+
+OBJETO: Checkpoint (Punto de reaparicion)
+------------------------------------------------------------
+Posicion del ultimo checkpoint donde reaparecera el
+jugador tras morir. Si es 0,0 significa que no hay
+checkpoint activo.
+
+Formato: Checkpoint:x, y
+
+EJEMPLOS:
+  Checkpoint:107.0,67.0
+  Checkpoint:0.0,0.0       (sin checkpoint)
+
+OBJETO: SafeZone (Zona Segura)
+------------------------------------------------------------
+Areas del nivel donde el jugador esta a salvo de
+enemigos y bombas. Son rectangulos.
+
+Formato:
+  SafeZone:TIPO, x, y, ancho, alto, respawnX, respawnY
+
+PARAMETROS:
+  x, y          = esquina superior izquierda del area
+  ancho, alto   = dimensiones del rectangulo
+  respawnX, Y   = punto exacto donde aparece el jugador
+
+TIPOS DE ZONA SEGURA:
+
+  START (=StartSafeZone)
+    Zona de inicio del nivel. El jugador aparece aqui al
+    comenzar o al morir si no hay checkpoint. En PvP, la
+    START de P1 es la FINAL de P2 y viceversa.
+
+  INTERMEDIATE (=IntermediateSafeZone)
+    Checkpoint voluntario. Al pisarla, guarda el estado
+    actual del nivel (monedas recogidas, enemigos vivos)
+    y establece un nuevo punto de reaparicion. Opcional.
+
+  FINAL (=FinalSafeZone)
+    Zona de meta. Si el jugador llega aqui con TODAS las
+    monedas requeridas recolectadas, completa el nivel.
+
+NOTA: Todo nivel debe tener al menos una START y una FINAL.
+      INTERMEDIATE puede haber 0, 1 o varias.
+
+EJEMPLOS:
+  SafeZone:START,5,55,30,30,20,70
+  SafeZone:INTERMEDIATE,95,55,25,25,107,67
+  SafeZone:FINAL,185,55,30,30,200,70
+
+OBJETO: Wall (Pared)
+------------------------------------------------------------
+Obstaculos estaticos e indestructibles. Nadie puede
+atravesarlos (ni jugadores ni enemigos). Los enemigos
+lineales rebotan al chocar con paredes.
+
+Formato:
+  Wall:x, y, ancho, alto
+
+PARAMETROS:
+  x, y        = esquina superior izquierda
+  ancho, alto = dimensiones en unidades logicas
+
+NOTA: Los enemigos miden 8x8. El jugador mide 10x10
+      (o 15x15 si es INKY). Disena los pasillos con
+      suficiente espacio para maniobrar.
+
+EJEMPLOS:
+  Wall:0,45,250,8         // pared horizontal gruesa
+  Wall:30,0,8,70          // pared vertical
+  Wall:0,0,220,3          // borde superior del nivel
+  Wall:100,40,80,8        // plataforma central
+
+OBJETO: Coin (Moneda normal)
+------------------------------------------------------------
+Moneda amarilla basica. Es REQUERIDA para completar
+el nivel (deben recolectarse todas).
+Tamano: 6x6 unidades.
+
+Formato:
+  Coin:x, y, recolectada
+
+PARAMETROS:
+  x, y        = posicion centro de la moneda
+  recolectada = 0 (no recogida) o 1 (ya recogida)
+
+EJEMPLOS:
+  Coin:55,62,0
+  Coin:175,62,1    // ya fue recogida (para partidas guardadas)
+
+OBJETO: SkinCoin (Moneda de personaje)
+------------------------------------------------------------
+Moneda especial que, al recogerse, cambia temporalmente
+el tipo de personaje del jugador (skin). El efecto dura
+hasta que se recolecta otra SkinCoin o el jugador muere.
+Es REQUERIDA para completar el nivel.
+Tamano: 6x6 unidades.
+
+Formato:
+  SkinCoin:x, y, TIPO_SKIN, recolectada
+
+PARAMETROS:
+  x, y        = posicion centro
+  TIPO_SKIN   = BLINKY, INKY o CLYDE
+  recolectada = 0 o 1
+
+TIPOS DISPONIBLES:
+  BLINKY -> color rojo, vel 1.0x, tamano 10x10
+  INKY   -> color azul, vel 1.5x, tamano 15x15
+  CLYDE  -> color verde, vel 1.0x, escudo innato
+
+EJEMPLOS:
+  SkinCoin:100,62,INKY,0
+  SkinCoin:130,62,CLYDE,0
+  SkinCoin:160,62,BLINKY,1   // ya recogida
+
+OBJETO: Life (Fuente de vida)
+------------------------------------------------------------
+Elemento especial estatico que otorga un escudo adicional
+al jugador que lo recolecta. NO es requerido para
+completar el nivel. Desaparece al ser recolectado.
+Tamano: 8x8 unidades.
+
+Formato:
+  Life:x, y, recolectada
+
+PARAMETROS:
+  x, y        = posicion centro
+  recolectada = 0 o 1
+
+NOTA: Cada escudo permite absorber UN golpe de enemigo
+      sin morir (con 60 frames de invencibilidad).
+
+EJEMPLOS:
+  Life:95,75,0
+  Life:70,55,1   // ya recogida
+
+OBJETO: Enemy (Enemigo)
+------------------------------------------------------------
+Los enemigos eliminan al jugador si lo tocan (a menos
+que tenga escudo o este en zona segura). No recolectan
+monedas. Su movimiento sigue una ESTRATEGIA.
+Tamano tipico: 8x8 unidades.
+
+Formato:
+  Enemy:x, y, ancho, alto, vivo, ESTRATEGIA
+
+PARAMETROS:
+  x, y          = posicion inicial
+  ancho, alto   = dimensiones (normalmente 8,8)
+  vivo          = 1 (vivo) o 0 (muerto/destruido)
+  ESTRATEGIA    = ver estrategias abajo
+
+TIPOS DE ENEMIGO POR ESTRATEGIA:
+
+ESTRATEGIA A: LinearMovement (Movimiento lineal)
+-----------------------------------------------------------------
+  Se desplaza en linea recta horizontal o vertical.
+  Rebota al chocar con paredes.
+
+  Formato: LinearMovement:vx, vy, multiplicador
+
+  PARAMETROS:
+    vx            = velocidad en X (-1 a 1). Poner 0 si es vertical.
+    vy            = velocidad en Y (-1 a 1). Poner 0 si es horizontal.
+    multiplicador = factor de velocidad (1.0 = normal, 2.0 = rapido)
+
+  NOTA: Solo UNO de vx/vy debe ser distinto de 0.
+        Velocidad efectiva = vx * mult (o vy * mult).
+        Valor negativo invierte la direccion inicial.
+
+  DIFICULTAD: Baja (vel 1.0), Alta (vel >= 2.0, "Tipo A")
+
+  EJEMPLOS:
+    Enemy:50,53,8,8,1,LinearMovement:0.8,0,1.0
+      -> Horizontal derecha, velocidad normal
+    Enemy:80,10,8,8,1,LinearMovement:0,1.0,2.0
+      -> Vertical abajo, doble velocidad (Tipo A)
+    Enemy:168,30,8,8,1,LinearMovement:-1.0,0,2.5
+      -> Horizontal izquierda, velocidad 2.5x
+
+ESTRATEGIA B: CircularMovement (Movimiento circular)
+-----------------------------------------------------------------
+  Patrulla en una trayectoria circular alrededor de un
+  punto central. No rebota con paredes.
+
+  Formato: CircularMovement:centroX, centroY, radio, velAngular
+
+  PARAMETROS:
+    centroX, Y = punto central de la orbita
+    radio      = distancia desde el centro (en unidades)
+    velAngular = velocidad angular en radianes/frame
+                 (~0.05 = lento, ~0.08 = rapido)
+
+  NOTA: La posicion inicial en x,y no afecta la orbita;
+        el enemigo se coloca automaticamente segun el
+        angulo actual (inicia en angulo 0 = derecha).
+
+  EJEMPLOS:
+    Enemy:110,70,8,8,1,CircularMovement:110,70,20,0.06
+      -> Orbita de radio 20 alrededor de (110,70), vel media
+    Enemy:60,70,8,8,1,CircularMovement:60,70,18,0.08
+      -> Orbita de radio 18, vel rapida
+
+OBJETO: Bomb (Bomba)
+------------------------------------------------------------
+Elemento estatico que, al ser tocado por un jugador o
+enemigo, explota en un radio de 25 unidades. La
+explosion dura 180 frames (3 segundos) y puede destruir
+jugadores y enemigos dentro del radio.
+Tamano: 8x8 unidades.
+
+Formato:
+  Bomb:x, y, explotada
+
+PARAMETROS:
+  x, y      = posicion centro de la bomba
+  explotada = 0 (sin explotar) o 1 (ya exploto)
+
+NOTA: Si un jugador toca una bomba SIN explotar, la
+      bomba explota. Si toca el area de explosion
+      mientras explota, recibe dano.
+
+EJEMPLOS:
+  Bomb:55,50,0       // bomba activa
+  Bomb:145,15,1      // bomba ya explotada
+
+REGLAS DEL JUEGO (resumen)
+------------------------------------------------------------
+1. Para completar un nivel, el jugador debe recolectar
+   TODAS las monedas requeridas (Coin + SkinCoin) y
+   llegar a la zona FINAL antes de que se acabe el
+   tiempo.
+2. Si un enemigo toca al jugador, este muere y se
+   reinicia en el checkpoint (o zona START si no hay).
+   Suma una muerte.
+3. No hay limite de vidas, solo un contador de muertes
+   hasta que se acabe el tiempo.
+4. Si el jugador llega a una zona INTERMEDIATE, esta
+   se establece como nuevo punto de reaparicion y se
+   guarda el estado actual del nivel.
+5. En modos de 2 jugadores, si chocan entre si cuenta
+   como muerte para ambos.
+
+EJEMPLO 1: NIVEL BASICO (1 jugador, sin checkpoint)
+------------------------------------------------------------
+Dos barras horizontales, monedas skin y enemigos lineales.
+
+=== NIVL:1 ===
+SafeZone:START,5,55,30,30,20,70
+SafeZone:FINAL,185,55,30,30,200,70
+Wall:0,45,250,8
+Wall:0,87,250,8
+Wall:0,0,220,3
+Wall:0,147,220,3
+Wall:0,0,3,150
+Wall:217,0,3,150
+Coin:55,62,0
+Coin:65,62,0
+Coin:75,62,0
+SkinCoin:100,62,INKY,0
+SkinCoin:130,62,CLYDE,0
+SkinCoin:160,62,INKY,0
+Coin:175,62,0
+Life:95,75,0
+Enemy:50,53,8,8,1,LinearMovement:0.8,0,1.0
+Enemy:90,79,8,8,1,LinearMovement:1.0,0,1.0
+Enemy:120,53,8,8,1,LinearMovement:0,0.8,1.0
+Enemy:150,79,8,8,1,LinearMovement:0,1.0,1.0
+=== FIN NIVL:1 ===
+
+EJEMPLO 2: NIVEL CON CHECKPOINT Y BOMBAS
+------------------------------------------------------------
+Muro vertical izquierdo, plataforma central, zona
+intermedia, bombas, enemigos mixtos (lineal + circular).
+
+=== NIVL:2 ===
+SafeZone:START,5,5,25,25,15,17
+SafeZone:INTERMEDIATE,95,55,25,25,107,67
+SafeZone:FINAL,185,55,30,30,200,70
+Wall:30,0,8,70
+Wall:30,90,8,60
+Wall:100,40,80,8
+Wall:160,48,8,60
+Wall:0,0,220,3
+Wall:0,97,220,3
+Wall:0,0,3,100
+Wall:217,0,3,100
+Coin:55,30,0
+Coin:55,40,0
+SkinCoin:70,60,INKY,0
+SkinCoin:120,20,CLYDE,0
+SkinCoin:140,70,BLINKY,0
+Coin:175,30,0
+Coin:175,90,0
+Life:95,72,0
+Enemy:38,30,8,8,1,LinearMovement:1.0,0,1.0
+Enemy:80,10,8,8,1,LinearMovement:0,1.0,2.0
+Enemy:110,70,8,8,1,CircularMovement:110,70,20,0.06
+Enemy:150,90,8,8,1,CircularMovement:150,90,25,0.05
+Enemy:168,30,8,8,1,LinearMovement:1.0,0,2.0
+Bomb:55,50,0
+Bomb:145,15,0
+=== FIN NIVL:2 ===
+
+EJEMPLO 3: NIVEL COMPLEJO (3 secciones, enemigos densos)
+------------------------------------------------------------
+Varias zonas intermedias, muchos enemigos y bombas.
+
+=== NIVL:3 ===
+SafeZone:START,5,5,25,25,15,17
+SafeZone:INTERMEDIATE,95,10,25,25,107,22
+SafeZone:INTERMEDIATE,95,70,25,25,107,82
+SafeZone:FINAL,190,60,25,25,202,60
+Wall:30,0,8,55
+Wall:30,85,8,65
+Wall:80,35,60,8
+Wall:80,100,60,8
+Wall:160,0,8,55
+Wall:160,85,8,65
+Wall:0,0,220,3
+Wall:0,97,220,3
+Wall:0,0,3,100
+Wall:217,0,3,100
+Coin:50,30,0
+Coin:50,80,0
+SkinCoin:110,60,CLYDE,0
+SkinCoin:140,20,BLINKY,0
+SkinCoin:140,85,INKY,0
+Coin:175,40,0
+Coin:175,80,0
+Life:70,55,0
+Life:140,15,0
+Enemy:38,25,8,8,1,LinearMovement:1.0,0,1.0
+Enemy:38,80,8,8,1,LinearMovement:1.0,0,1.0
+Enemy:110,43,8,8,1,LinearMovement:0,1.0,1.0
+Enemy:140,43,8,8,1,LinearMovement:0,1.0,2.0
+Enemy:168,60,8,8,1,LinearMovement:1.0,0,2.5
+Enemy:60,70,8,8,1,CircularMovement:60,70,20,0.07
+Enemy:110,70,8,8,1,CircularMovement:110,70,25,0.05
+Enemy:168,70,8,8,1,CircularMovement:168,70,30,0.06
+Bomb:55,20,0
+Bomb:170,50,0
+=== FIN NIVL:3 ===
+
+CONSEJOS DE DISENO
+------------------------------------------------------------
+1. El nivel NO tiene un tamano fijo, pero los niveles
+   de fabrica usan ~220 de ancho x ~100-150 de alto.
+
+2. Pon siempre paredes de borde (arriba, abajo, izq,
+   der) para que los enemigos no se salgan del mapa.
+
+3. Los enemigos lineales con multiplicador >= 2.0 son
+   "Tipo A" (acelerados). Dificultad ALTA.
+
+4. Los enemigos miden 8x8. El jugador mide 10x10
+   (BLINKY/CLYDE) o 15x15 (INKY). Disena los pasillos
+   con al menos 12-16 unidades de ancho.
+
+5. Monedas: Coin = 6x6, Life = 8x8 (mas grande).
+
+6. El tiempo limite se define en LevelFactory.java
+   (metodo createLevelFromImport: ultimo parametro).
+   Por defecto son 60 segundos. Si no te aparece el
+   parametro "Time" en el TXT, el juego usara el
+   default * 60 frames.
+
+7. La posicion (x,y) de monedas y bombas es el centro.
+   La posicion de paredes, zonas seguras y enemigos
+   es la esquina superior izquierda.
+
+8. Para modo PvP, la START de P1 esta tipicamente a
+   la izquierda y la FINAL a la derecha. Para P2 es
+   al reves (la START de P1 es la FINAL de P2).
