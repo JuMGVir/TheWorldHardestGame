@@ -1,0 +1,10 @@
+domain.Level@24122393
+13
+46
+107.0
+67.0
+false
+true
+false
+true
+false

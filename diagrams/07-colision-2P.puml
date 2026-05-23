@@ -1,0 +1,60 @@
+@startuml
+|Game2P|
+-> Game2P : checkCollisions()
+
+loop coins
+  alt p1 collides
+    -> Coin : collect(), onCollect(p1)
+    -> Game2P : score1++
+  else p2 collides
+    -> Coin : collect(), onCollect(p2)
+    -> Game2P : score2++
+  end
+end
+
+loop safeZones
+  alt p1 collides
+    -> SafeZone : onPlayerEnter2P(this, p1, true)
+    alt Start: no efecto
+    alt Intermediate: checkpoint
+    alt Final: player1Wins()
+    end
+  else p2 collides
+    -> SafeZone : onPlayerEnter2P(this, p2, false)
+    alt Start: player2Wins()
+    alt Intermediate: checkpoint
+    alt Final: no efecto
+    end
+  end
+end
+
+-> Game2P : isInSafeZone(p1) → p1Safe
+-> Game2P : isInSafeZone(p2) → p2Safe
+
+loop enemies
+  alt !p1Safe && collides
+    -> Player1 : takeDamage()
+  alt !p2Safe && collides
+    -> Player2 : takeDamage()
+  end
+end
+
+loop bombs
+  Player1/2 -> Player1/2 : takeDamage() / explode()
+end
+
+loop bomb vs enemy
+  -> Enemy : setAlive(false)
+end
+
+alt p1 collides p2
+  -> Player1 : takeDamage() if !p1Safe
+  -> Player2 : takeDamage() if !p2Safe
+  alt d1
+    -> Game2P : deaths1++, playDeath(), resetLevel(p1)
+  end
+  alt d2
+    -> Game2P : deaths2++, playDeath(), resetLevel(p2)
+  end
+end
+@enduml

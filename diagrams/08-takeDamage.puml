@@ -1,0 +1,22 @@
+@startuml
+|Player|
+-> Player : takeDamage()
+
+alt invincibilityFrames > 0
+  --> false : sin daño
+else shieldCharges > 0
+  -> Player : shieldCharges--
+  -> Player : invincibilityFrames = 60
+  --> false : escudo absorbido
+else playerType.onTakeDamage() != null
+  -> PlayerType : onTakeDamage()
+  |PlayerType|
+  --> Player : newState
+  |Player|
+  -> Player : reduce tamaño
+  -> Player : invincibilityFrames = 60
+  --> false : reducción aplicada
+else
+  --> true : muerte real
+end
+@enduml

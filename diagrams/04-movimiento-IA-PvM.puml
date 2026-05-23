@@ -1,0 +1,15 @@
+@startuml
+|Timer|
+-> GamePvM : update()
+|GamePvM|
+-> Player2 : updateAI(walls, coins, enemies, safeZones)
+|Player2|
+-> ExpertAI : getMovement(player, ...)
+note right: or RandomAI
+|ExpertAI|
+--> Player2 : [dx, dy]
+|Player2|
+-> Player2 : move(dx, dy, walls)
+|GamePvM|
+-> Game2P : super.update()
+@enduml

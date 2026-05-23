@@ -1,0 +1,28 @@
+@startuml
+|Game2P|
+-> Level : update()
+|Level|
+loop for each Enemy
+  -> Enemy : updateWithWalls(walls)
+  |Enemy|
+  -> LinearMovement : update(enemy, walls)
+  note right: or CircularMovement
+  |LinearMovement|
+  -> Enemy : x += vx
+  loop for each Wall
+    -> Wall : collides(w)
+    alt collides
+      -> Enemy : x = oldX
+      -> LinearMovement : vx *= -1 (rebote)
+    end
+  end
+  -> Enemy : y += vy
+  loop for each Wall
+    -> Wall : collides(w)
+    alt collides
+      -> Enemy : y = oldY
+      -> LinearMovement : vy *= -1 (rebote)
+    end
+  end
+end
+@enduml

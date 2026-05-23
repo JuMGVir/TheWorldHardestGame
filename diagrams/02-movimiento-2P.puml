@@ -1,0 +1,20 @@
+@startuml
+|Timer|
+-> GAME_2P : pollInput()
+|GAME_2P|
+-> Game2P : movePlayer1(dx1, dy1)
+|Game2P|
+-> Player1 : move(dx, dy, walls)
+|Player1|
+-> Player1 : move X (revert if wall)
+-> Player1 : move Y (revert if wall)
+|GAME_2P|
+alt not p2.isAI()
+  -> Game2P : movePlayer2(dx2, dy2)
+  |Game2P|
+  -> Player2 : move(dx, dy, walls)
+  |Player2|
+  -> Player2 : move X (revert if wall)
+  -> Player2 : move Y (revert if wall)
+end
+@enduml

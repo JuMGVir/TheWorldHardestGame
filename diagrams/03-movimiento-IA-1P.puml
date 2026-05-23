@@ -1,0 +1,13 @@
+@startuml
+|Timer|
+-> Game : update()
+|Game|
+-> Player : isAI() == true
+-> Player : updateAI(walls, coins, enemies, safeZones)
+|Player|
+-> PlayerMovementAI : getMovement(player, walls, coins, enemies, safeZones)
+|PlayerMovementAI|
+--> Player : [dx, dy]
+|Player|
+-> Player : move(dx, dy, walls)
+@enduml

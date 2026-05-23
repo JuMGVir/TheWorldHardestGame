@@ -1,0 +1,38 @@
+// FORMATO: NombreClase:datos_componente
+
+=== NIVL:1 ===
+Player:135.0,56.25,PENALIZED_CLYDE,20.0,70.0,0
+Deaths:0
+Score:5
+Player:200.0,70.0,INKY,200.0,70.0,0
+Deaths:0
+Score:0
+Winner:0
+GameOver:0
+Time:3249
+Checkpoint:0.0,0.0
+SafeZone:START,5.0,55.0,30.0,30.0,20.0,70.0
+SafeZone:FINAL,185.0,55.0,30.0,30.0,200.0,70.0
+Wall:0.0,45.0,250.0,8.0
+Wall:0.0,87.0,250.0,8.0
+Wall:0.0,0.0,220.0,3.0
+Wall:0.0,147.0,220.0,3.0
+Wall:0.0,0.0,3.0,150.0
+Wall:217.0,0.0,3.0,150.0
+Wall:0.0,0.0,220.0,5.0
+Wall:0.0,145.0,220.0,5.0
+Wall:0.0,0.0,5.0,150.0
+Wall:215.0,0.0,5.0,150.0
+Coin:55.0,62.0,1
+Coin:65.0,62.0,1
+Coin:75.0,62.0,1
+SkinCoin:100.0,62.0,INKY,1
+SkinCoin:130.0,62.0,CLYDE,1
+SkinCoin:160.0,62.0,INKY,0
+Coin:175.0,62.0,0
+Life:95.0,75.0,1
+Enemy:83.59999999999988,53.0,8.0,8.0,1,LinearMovement:-0.8,0.0,1.0
+Enemy:35.0,79.0,8.0,8.0,1,LinearMovement:1.0,0.0,1.0
+Enemy:120.0,69.79999999999994,8.0,8.0,1,LinearMovement:0.0,0.8,1.0
+Enemy:150.0,53.0,8.0,8.0,1,LinearMovement:0.0,-1.0,1.0
+=== FIN NIVL:1 ===

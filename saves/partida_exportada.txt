@@ -1,0 +1,12 @@
+domain.Level@78cf5150
+11
+49
+19.5
+17.0
+false
+false
+false
+false
+false
+false
+false

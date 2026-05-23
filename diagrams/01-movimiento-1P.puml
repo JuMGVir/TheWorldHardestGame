@@ -1,0 +1,23 @@
+@startuml
+|Timer|
+-> GamePanel : updateInput()
+|GamePanel|
+-> Game : updateInput(up, down, left, right)
+|Game|
+-> Player : move(dx, dy, walls)
+|Player|
+-> Player : oldX = x\nx = nextX
+loop for each Wall
+  -> Wall : collides(w)
+  alt collides
+    -> Player : x = oldX
+  end
+end
+-> Player : oldY = y\ny = nextY
+loop for each Wall
+  -> Wall : collides(w)
+  alt collides
+    -> Player : y = oldY
+  end
+end
+@enduml

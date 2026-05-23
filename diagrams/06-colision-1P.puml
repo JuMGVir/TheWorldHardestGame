@@ -1,0 +1,65 @@
+@startuml
+|Game|
+-> Game : checkCollisions()
+
+|Game|
+loop coins
+  -> Coin : isCollected() && collides(player)
+  alt collect
+    -> Coin : collect()
+    -> Coin : onCollect(player, soundCallback)
+    alt isRequired
+      -> Game : score++
+    end
+  end
+end
+
+loop safeZones
+  -> SafeZone : collides(player)
+  alt collides
+    -> SafeZone : onPlayerEnter1P(this, player)
+    alt StartSafeZone: no efecto
+    alt IntermediateSafeZone: checkpoint
+    alt FinalSafeZone: win / advanceLevel
+    end
+  end
+end
+
+-> Game : isInSafeZone(player) → playerSafe
+
+loop enemies
+  alt !playerSafe && collides && alive
+    -> Player : takeDamage()
+    alt shield > 0
+      -> Player : shield--, invincibility=60
+    alt onTakeDamage != null
+      -> Player : reduce size, invincibility=60
+    alt no shield, no reduce
+      -> Game : deaths++
+      -> SoundCallback : playDeath()
+      alt hasCheckpoint
+        -> Checkpoint : restoreLevelState()
+      else
+        -> Game : loadLevel(currentLevel)
+      end
+    end
+  end
+end
+
+loop bombs explosion
+  alt !playerSafe && exploding && collides
+    -> Player : takeDamage()
+  end
+end
+
+loop bombs contact
+  alt !exploded && collides
+    -> Bomb : explode()
+    -> SoundCallback : playSfx()
+  end
+end
+
+loop bomb vs enemy
+  -> Enemy : setAlive(false)
+end
+@enduml
